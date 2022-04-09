@@ -25,6 +25,9 @@
 #define USER_TYPE_LEN 15
 #define KEY_LEN 30
 
+#define MESSAGE_LEN 500
+#define USER_LEN 26
+
 #define HEADER_FRAG_LEN 550
 #define BODY_LEN 550
 
@@ -43,8 +46,8 @@ typedef struct TwitchChat {
 } TwitchChat;
 
 typedef struct Message {
-    char user[26];
-    char message[2500];
+    char user[USER_LEN];
+    char message[MESSAGE_LEN];
 } Message;
 
 typedef struct Header {
@@ -65,8 +68,13 @@ typedef struct Header {
     char user_id[USER_ID_LEN];
     char user_type[USER_TYPE_LEN];
     int ind;
-    char user_name[26];
+    char user_name[USER_LEN];
     bool emote_only;
+    char reply_parent_display_name[USER_LEN];
+    char reply_parent_msg_body[MESSAGE_LEN];
+    char reply_parent_msg_id[NONCE_LEN];
+    char reply_parent_user_id[USER_ID_LEN];
+    char reply_parent_user_login[USER_LEN];
 } Header;
 
 typedef struct Irc {
@@ -77,14 +85,12 @@ typedef struct Irc {
     char to_process[BODY_LEN + HEADER_FRAG_LEN + BUFF_SIZE];
     Message message;
     Header header;
+    char buf[BUFF_SIZE];
 } Irc;
 
 void chat_init(TwitchChat *chat);
 int chat_send(TwitchChat *chat, const char *msg);
-int chat_recv(TwitchChat *chat, char buf[BUFF_SIZE]);
-void parse_message(Message *message, char *msg_str);
 void reset_message(Message *message);
-char *lookahead(char *str, int position, int end);
-void parse_header(Header *header, char *header_str, int len);
 void init_irc(Irc *irc);
 void parse_irc(TwitchChat *chat, Irc *irc);
+void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel);

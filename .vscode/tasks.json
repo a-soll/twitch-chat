@@ -1,0 +1,25 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Build",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "-o",
+                "irc.out",
+                "irc.c",
+                "irc/*.c",
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "run make debug"
+        }
+    ],
+    "version": "2.0.0"
+}

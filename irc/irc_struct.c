@@ -1,4 +1,4 @@
-#include "irc_struct.h"
+#include "parse.h"
 
 void chat_init(TwitchChat *chat) {
     memset(&chat->hints, 0, sizeof(chat->hints));
@@ -75,7 +75,7 @@ void parse_msg(char *field, char *msg_str, int cur_ind) {
     bool add_to = false;
     int count = 0;
     while (msg_str[cur_ind] != '\0') {
-        if (msg_str[cur_ind] == ':') {
+        if (msg_str[cur_ind] == ':' && !add_to) {
             add_to = true;
             cur_ind++;
         }
@@ -213,4 +213,71 @@ void init_irc(Irc *irc) {
     irc->processing_msg = false;
     irc->body[0] = '\0';
     irc->header_str[0] = '\0';
+    irc->message.message[0] = '\0';
+    irc->message.user[0] = '\0';
+}
+
+void parse_irc(TwitchChat *chat, Irc *irc) {
+    char to_post[HEADER_FRAG_LEN + BODY_LEN];
+    char *tmp = NULL;
+    int hind = 0;
+    int bind = 0;
+    int sz = chat_recv(chat, irc->buf);
+    if (sz == -1) {
+        return;
+    }
+    strcat(irc->to_process, irc->header_str);
+    strcat(irc->to_process, irc->body);
+    strcat(irc->to_process, irc->buf);
+
+    for (int i = 0; i < sizeof(irc->to_process); i++) {
+        if (irc->to_process[i] == '\0') {
+            irc->to_process[0] = '\0';
+            irc->header_str[hind] = '\0';
+            irc->body[bind] = '\0';
+            if (!irc->processing_header) {
+                irc->header_str[0] = '\0';
+            }
+            return;
+        }
+        // check if \r\n and reset processing_header
+        if (irc->to_process[i] == '\r' && (tmp = lookahead(irc->to_process, i, 2)) != NULL) {
+            if (tmp[1] == '\n') {
+                irc->processing_header = true;
+                irc->body[bind] = '\0';
+                if (irc->processing_msg) {
+                    parse_message(&irc->message, irc->body);
+                }
+                irc->body[0] = '\0';
+                bind = 0;
+                hind = 0;
+                irc->header_str[0] = '\0';
+                free(tmp);
+                i++;
+                continue;
+            }
+        }
+        if (irc->processing_header) {
+            if (irc->to_process[i] == ' ') {
+                irc->processing_header = false;
+                irc->header_str[hind] = '\0';
+                if (irc->header_str[0] == '@') {
+                    irc->processing_msg = true;
+                    parse_header(&irc->header, irc->header_str, hind);
+                }
+                continue;
+            }
+            irc->header_str[hind] = irc->to_process[i];
+            hind++;
+        } else {
+            irc->body[bind] = irc->to_process[i];
+            bind++;
+        }
+    }
+}
+
+void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel) {
+    char msg[150];
+    snprintf(msg, 150, "pass oauth:%s\r\n", token);
+    printf("%s\n", msg);
 }
