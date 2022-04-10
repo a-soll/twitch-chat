@@ -150,7 +150,7 @@ void print_data(Header *header) {
     printf("COL %s\n", header->color);
     printf("DN %s\n", header->display_name);
     printf("EM %s\n", header->emotes);
-    printf("FM %d\n", header->first_message);
+    printf("FM %d\n", header->first_msg);
     printf("FL %s\n", header->flags);
     printf("id %s\n", header->id);
     printf("MOD %d\n", header->mod);
@@ -167,42 +167,16 @@ void parse_header(Header *header, char *header_str, int len) {
     char key[KEY_LEN];
 
     while (i <= len) {
+        header_keys *hkey;
         i += get_key(header_str, key, i);
-        if (strcmp(key, "badge-info") == 0) {
-            i += parse_token(header->badge_info, header_str, i);
-        } else if (strcmp(key, "badges") == 0) {
-            i += parse_token(header->badges, header_str, i);
-        } else if (strcmp(key, "client-nonce") == 0) {
-            i += parse_token(header->client_nonce, header_str, i);
-        } else if (strcmp(key, "color") == 0) {
-            i += parse_token(header->color, header_str, i);
-        } else if (strcmp(key, "display-name") == 0) {
-            i += parse_token(header->display_name, header_str, i);
-        } else if (strcmp(key, "emote-only") == 0) {
-            i += parse_bool(&header->emote_only, header_str, i);
-        } else if (strcmp(key, "emotes") == 0) {
-            i += parse_token(header->emotes, header_str, i);
-        } else if (strcmp(key, "first-msg") == 0) {
-            i += parse_bool(&header->first_message, header_str, i);
-        } else if (strcmp(key, "flags") == 0) {
-            i += parse_token(header->flags, header_str, i);
-        } else if (strcmp(key, "id") == 0) {
-            i += parse_token(header->id, header_str, i);
-        } else if (strcmp(key, "mod") == 0) {
-            i += parse_bool(&header->mod, header_str, i);
-        } else if (strcmp(key, "room-id") == 0) {
-            i += parse_token(header->room_id, header_str, i);
-        } else if (strcmp(key, "subscriber") == 0) {
-            i += parse_bool(&header->subscriber, header_str, i);
-        } else if (strcmp(key, "tmi-sent-ts") == 0) {
-            i += parse_token(header->tmi_sent_ts, header_str, i);
-        } else if (strcmp(key, "turbo") == 0) {
-            i += parse_bool(&header->turbo, header_str, i);
-        } else if (strcmp(key, "user-id") == 0) {
-            i += parse_token(header->user_id, header_str, i);
-        } else if (strcmp(key, "user-type") == 0) {
-            i += parse_token(header->user_type, header_str, i);
-            header->user_type[0] = '\0';
+        hkey = in_word_set(key, strlen(key));
+        if (hkey->parse_token != NULL) {
+            char *field = (char *)((char *)header + hkey->offset);
+            i += hkey->parse_token(field, header_str, i);
+        }
+        if (hkey->parse_bool != NULL) {
+            bool field = *((bool *)(char *)header + hkey->offset);
+            i += hkey->parse_bool(&field, header_str, i);
         }
         i++;
     }
@@ -215,6 +189,7 @@ void init_irc(Irc *irc) {
     irc->header_str[0] = '\0';
     irc->message.message[0] = '\0';
     irc->message.user[0] = '\0';
+    _init_header(&irc->header);
 }
 
 void parse_irc(TwitchChat *chat, Irc *irc) {
@@ -280,4 +255,11 @@ void join_chat(TwitchChat *chat, const char *user, const char *token, const char
     char msg[150];
     snprintf(msg, 150, "pass oauth:%s\r\n", token);
     printf("%s\n", msg);
+}
+
+void _init_header(Header *header) {
+    header->badge_info[0] = '\0';
+    header->badges[0] = '\0';
+    header->client_nonce[0] = '\0';
+    header->color[0] = '\0';
 }

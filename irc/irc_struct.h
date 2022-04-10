@@ -57,7 +57,7 @@ typedef struct Header {
     char color[COLOR_LEN];
     char display_name[NAME_LEN];
     char emotes[EMOTES_LEN];
-    bool first_message;
+    bool first_msg;
     char flags[FLAG_LEN];
     char id[ID_LEN];
     bool mod;
@@ -75,6 +75,7 @@ typedef struct Header {
     char reply_parent_msg_id[NONCE_LEN];
     char reply_parent_user_id[USER_ID_LEN];
     char reply_parent_user_login[USER_LEN];
+    char msg_id[ID_LEN];
 } Header;
 
 typedef struct Irc {
@@ -94,3 +95,4 @@ void reset_message(Message *message);
 void init_irc(Irc *irc);
 void parse_irc(TwitchChat *chat, Irc *irc);
 void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel);
+void _init_header(Header *header);
