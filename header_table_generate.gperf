@@ -1,0 +1,35 @@
+%{
+
+%}
+    typedef struct header_struct {
+        char *name;
+        int (*parse_token)(char *field, char *header_str, int cur_ind);
+        int (*parse_bool)(bool *field, char *header_str, int cur_ind);
+        int offset;
+    } header_struct;
+%%
+badge-info, &parse_token, NULL, offsetof(Header, badge_info)
+badges, &parse_token, NULL, offsetof(Header, badges)
+client-nonce, &parse_token, NULL, offsetof(Header, client_nonce)
+color, &parse_token, NULL, offsetof(Header, color)
+display-name, &parse_token, NULL, offsetof(Header, display_name)
+emote-only, NULL, &parse_bool, offsetof(Header, emote_only)
+emotes, &parse_token, NULL, offsetof(Header, emotes)
+first-msg, NULL, &parse_bool, offsetof(Header, first_msg)
+flags, &parse_token, NULL, offsetof(Header, flags)
+id, &parse_token, NULL, offsetof(Header, id)
+mod, NULL, &parse_bool, offsetof(Header, mod)
+room-id, &parse_token, NULL, offsetof(Header, room_id)
+subscriber, NULL, &parse_bool, offsetof(Header, subscriber)
+tmi-sent-ts, &parse_token, NULL, offsetof(Header, tmi_sent_ts)
+turbo, NULL, &parse_bool, offsetof(Header, turbo)
+user-id, &parse_token, NULL, offsetof(Header, user_id)
+user-type, &parse_token, NULL, offsetof(Header, user_type)
+user-name, &parse_token, NULL, offsetof(Header, user_name)
+reply-parent-display-name, &parse_token, NULL, offsetof(Header, reply_parent_display_name)
+reply-parent-msg-body, &parse_token, NULL, offsetof(Header, reply_parent_msg_body)
+reply-parent-user-id, &parse_token, NULL, offsetof(Header, reply_parent_user_id)
+reply-parent-user-login, &parse_token, NULL, offsetof(Header, reply_parent_user_login)
+reply-parent-msg-id, &parse_token, NULL, offsetof(Header, reply_parent_msg_id)
+msg-id, &parse_token, NULL, offsetof(Header, msg_id)
+%%
