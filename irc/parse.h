@@ -15,4 +15,4 @@ int chat_recv(TwitchChat *chat, char buf[BUFF_SIZE]);
 void parse_header(Header *header, char *header_str, int len);
 char *lookahead(char *str, int position, int end);
 void parse_header_reply(char *field, char header_str[], int cur_ind);
-static unsigned int hash(const char *str, unsigned int len);
+unsigned int hash(const char *str, unsigned int len);

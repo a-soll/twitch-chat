@@ -73,8 +73,9 @@ int parse_user(char field[], char *msg_str, int cur_ind) {
 void parse_msg(char *field, char *msg_str, int cur_ind) {
     field[0] = '\0';
     bool add_to = false;
+    int len = strlen(msg_str);
     int count = 0;
-    while (msg_str[cur_ind] != '\0') {
+    while (msg_str[cur_ind] != '\0' && cur_ind < len) {
         if (msg_str[cur_ind] == ':' && !add_to) {
             add_to = true;
             cur_ind++;
@@ -85,7 +86,11 @@ void parse_msg(char *field, char *msg_str, int cur_ind) {
         }
         cur_ind++;
     }
-    field[count] = '\0';
+    if (cur_ind >= len) {
+        field[cur_ind - 1] = '\0';
+    } else {
+        field[count] = '\0';
+    }
 }
 
 void parse_message(Message *message, char *msg_str) {
@@ -130,7 +135,7 @@ int parse_bool(bool *field, char *header_str, int cur_ind) {
     return count;
 }
 
-int get_key(char *header_str, char *key, int cur_ind) {
+int get_header_key(char *header_str, char *key, int cur_ind) {
     int count = 0;
     int i = 0;
     while (header_str[cur_ind] != '=') {
@@ -168,7 +173,7 @@ void parse_header(Header *header, char *header_str, int len) {
 
     while (i <= len) {
         header_keys *hkey;
-        i += get_key(header_str, key, i);
+        i += get_header_key(header_str, key, i);
         hkey = in_word_set(key, strlen(key));
         if (hkey->parse_token != NULL) {
             char *field = (char *)((char *)header + hkey->offset);
@@ -183,6 +188,8 @@ void parse_header(Header *header, char *header_str, int len) {
 }
 
 void init_irc(Irc *irc) {
+    irc->process_len = 0;
+    irc->to_process = NULL;
     irc->processing_header = false;
     irc->processing_msg = false;
     irc->body[0] = '\0';
@@ -193,19 +200,47 @@ void init_irc(Irc *irc) {
 }
 
 void parse_irc(TwitchChat *chat, Irc *irc) {
-    char to_post[HEADER_FRAG_LEN + BODY_LEN];
     char *tmp = NULL;
     int hind = 0;
     int bind = 0;
-    int sz = chat_recv(chat, irc->buf);
-    if (sz == -1) {
+    size_t sz = chat_recv(chat, irc->buf);
+    size_t body_len = strlen(irc->body);
+    size_t header_len = strlen(irc->header_str);
+    size_t process_len = sz + body_len + header_len + 1;
+
+    if (sz <= 0) {
         return;
     }
-    strcat(irc->to_process, irc->header_str);
-    strcat(irc->to_process, irc->body);
-    strcat(irc->to_process, irc->buf);
 
-    for (int i = 0; i < sizeof(irc->to_process); i++) {
+    // ensure
+    if (process_len > irc->process_len) {
+        irc->process_len = process_len;
+        if (irc->to_process != NULL) {
+            irc->to_process = realloc(irc->to_process, process_len);
+        } else {
+            irc->to_process = malloc(process_len);
+        }
+    }
+
+    char *pos;
+    if (irc->processing_header) {
+        pos = memccpy(irc->to_process, irc->header_str, '\0', irc->process_len);
+    } else {
+        pos = memccpy(irc->to_process, irc->body, '\0', irc->process_len);
+    }
+    if (pos) {
+        if (pos) {
+            pos = memccpy(pos - 1, irc->buf, '\0', irc->process_len);
+            // if (pos) {
+            irc->to_process[pos - irc->to_process - 1] = '\0';
+            // }
+        }
+        irc->to_process[pos - irc->to_process - 1] = '\0';
+    } else {
+        irc->to_process[irc->process_len - 1] = '\0';
+    }
+
+    for (int i = 0; i < strlen(irc->to_process); i++) {
         if (irc->to_process[i] == '\0') {
             irc->to_process[0] = '\0';
             irc->header_str[hind] = '\0';
@@ -238,6 +273,7 @@ void parse_irc(TwitchChat *chat, Irc *irc) {
                 irc->header_str[hind] = '\0';
                 if (irc->header_str[0] == '@') {
                     irc->processing_msg = true;
+                    _init_header(&irc->header);
                     parse_header(&irc->header, irc->header_str, hind);
                 }
                 continue;
@@ -262,4 +298,10 @@ void _init_header(Header *header) {
     header->badges[0] = '\0';
     header->client_nonce[0] = '\0';
     header->color[0] = '\0';
+    header->reply_parent_display_name[0] = '\0';
+    header->reply_parent_msg_body[0] = '\0';
+    header->reply_parent_user_id[0] = '\0';
+    header->reply_parent_msg_id[0] = '\0';
+    header->reply_parent_user_login[0] = '\0';
+    header->room_id[0] = '\0';
 }

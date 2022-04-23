@@ -15,7 +15,7 @@ __inline
 inline
 #endif
 #endif
-    static unsigned int hash(const char *str, unsigned int len)
+    unsigned int hash(const char *str, unsigned int len)
 {
     static unsigned char asso_values[] =
         {

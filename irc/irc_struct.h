@@ -10,7 +10,7 @@
 
 #define MYPORT "6667"
 #define BACKLOG 10
-#define BUFF_SIZE 999
+#define BUFF_SIZE 1001
 #define COLOR_LEN 11
 #define NONCE_LEN 51
 #define NAME_LEN 26
@@ -25,11 +25,11 @@
 #define USER_TYPE_LEN 15
 #define KEY_LEN 30
 
-#define MESSAGE_LEN 500
+#define MESSAGE_LEN 550
 #define USER_LEN 26
 
-#define HEADER_FRAG_LEN 550
-#define BODY_LEN 550
+#define HEADER_FRAG_LEN 2500
+#define BODY_LEN 1700
 
 typedef struct TwitchChat {
     int status;
@@ -82,8 +82,9 @@ typedef struct Irc {
     bool processing_header;
     bool processing_msg;
     char header_str[HEADER_FRAG_LEN];
+    char *to_process;
+    size_t process_len;
     char body[BODY_LEN];
-    char to_process[BODY_LEN + HEADER_FRAG_LEN + BUFF_SIZE];
     Message message;
     Header header;
     char buf[BUFF_SIZE];
