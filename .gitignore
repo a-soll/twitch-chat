@@ -1,2 +1,9 @@
 *.dSYM*
 secret
+gperf.c
+*.out
+twitch-chat/*.txt
+test.*
+test
+irc.c
+.vscode/*.log

@@ -1,0 +1,6 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "code-runner.executorMapByGlob": {
+        "*.c|*.h": "cd $workspaceRoot && gcc -Wall -o irc.out irc.c irc/*c && ./irc.out"
+    }
+}
