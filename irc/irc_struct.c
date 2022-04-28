@@ -86,11 +86,7 @@ void parse_msg(char *field, char *msg_str, int cur_ind) {
         }
         cur_ind++;
     }
-    if (cur_ind >= len) {
-        field[cur_ind - 1] = '\0';
-    } else {
-        field[count] = '\0';
-    }
+    field[count] = '\0';
 }
 
 void parse_message(Message *message, char *msg_str) {
@@ -188,103 +184,45 @@ void parse_header(Header *header, char *header_str, int len) {
 }
 
 void init_irc(Irc *irc) {
-    irc->process_len = 0;
-    irc->to_process = NULL;
-    irc->processing_header = false;
-    irc->processing_msg = false;
-    irc->body[0] = '\0';
-    irc->header_str[0] = '\0';
+    irc->finished = false;
     irc->message.message[0] = '\0';
     irc->message.user[0] = '\0';
+    irc->size = 0;
+    _init_iterator(&irc->iterator);
     _init_header(&irc->header);
 }
 
 void parse_irc(TwitchChat *chat, Irc *irc) {
-    char *tmp = NULL;
-    int hind = 0;
-    int bind = 0;
-    size_t sz = chat_recv(chat, irc->buf);
-    size_t body_len = strlen(irc->body);
-    size_t header_len = strlen(irc->header_str);
-    size_t process_len = sz + body_len + header_len + 1;
-
-    if (sz <= 0) {
-        return;
+    if (irc->finished) {
+        irc->finished = false;
     }
+    Iterator *iter = &irc->iterator;
 
-    // ensure
-    if (process_len > irc->process_len) {
-        irc->process_len = process_len;
-        if (irc->to_process != NULL) {
-            irc->to_process = realloc(irc->to_process, process_len);
-        } else {
-            irc->to_process = malloc(process_len);
+    // request the next buffer chunk once finished with the current
+    if (iter->proc_ind == 0) {
+        irc->size = chat_recv(chat, irc->buf);
+        if (irc->size <= 0) {
+            return;
         }
+        irc->buf[irc->size] = '\0';
     }
 
-    char *pos;
-    if (irc->processing_header) {
-        pos = memccpy(irc->to_process, irc->header_str, '\0', irc->process_len);
-    } else {
-        pos = memccpy(irc->to_process, irc->body, '\0', irc->process_len);
-    }
-    if (pos) {
-        if (pos) {
-            pos = memccpy(pos - 1, irc->buf, '\0', irc->process_len);
-            // if (pos) {
-            irc->to_process[pos - irc->to_process - 1] = '\0';
-            // }
+    while (irc->buf[iter->proc_ind] != '\0') {
+        if (iter->processing_header) {
+            iter->proc_ind += parse_header_line(irc, iter->proc_ind);
         }
-        irc->to_process[pos - irc->to_process - 1] = '\0';
-    } else {
-        irc->to_process[irc->process_len - 1] = '\0';
-    }
-
-    for (int i = 0; i < strlen(irc->to_process); i++) {
-        if (irc->to_process[i] == '\0') {
-            irc->to_process[0] = '\0';
-            irc->header_str[hind] = '\0';
-            irc->body[bind] = '\0';
-            if (!irc->processing_header) {
-                irc->header_str[0] = '\0';
+        if (iter->processing_msg) {
+            iter->proc_ind += parse_msg_line(irc, iter->proc_ind);
+            if (!iter->processing_msg) {
+                irc->finished = true;
             }
             return;
         }
-        // check if \r\n and reset processing_header
-        if (irc->to_process[i] == '\r' && (tmp = lookahead(irc->to_process, i, 2)) != NULL) {
-            if (tmp[1] == '\n') {
-                irc->processing_header = true;
-                irc->body[bind] = '\0';
-                if (irc->processing_msg) {
-                    parse_message(&irc->message, irc->body);
-                }
-                irc->body[0] = '\0';
-                bind = 0;
-                hind = 0;
-                irc->header_str[0] = '\0';
-                free(tmp);
-                i++;
-                continue;
-            }
-        }
-        if (irc->processing_header) {
-            if (irc->to_process[i] == ' ') {
-                irc->processing_header = false;
-                irc->header_str[hind] = '\0';
-                if (irc->header_str[0] == '@') {
-                    irc->processing_msg = true;
-                    _init_header(&irc->header);
-                    parse_header(&irc->header, irc->header_str, hind);
-                }
-                continue;
-            }
-            irc->header_str[hind] = irc->to_process[i];
-            hind++;
-        } else {
-            irc->body[bind] = irc->to_process[i];
-            bind++;
+        if (iter->proc_ind < irc->size) {
+            iter->proc_ind++;
         }
     }
+    iter->proc_ind = 0;
 }
 
 void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel) {
@@ -304,4 +242,73 @@ void _init_header(Header *header) {
     header->reply_parent_msg_id[0] = '\0';
     header->reply_parent_user_login[0] = '\0';
     header->room_id[0] = '\0';
+}
+
+int parse_header_line(Irc *irc, int i) {
+    Iterator *iter = &irc->iterator;
+    if (!iter->header_str[0]) {
+        _init_header(&irc->header);
+    }
+    int count = 0;
+
+    while (irc->buf[i] != '\0') {
+        if (irc->buf[i] == ' ') { // header ends on space
+            iter->header_str[iter->hind] = '\0';
+            if (iter->header_str[0] == '@') {
+                parse_header(&irc->header, iter->header_str, iter->hind);
+                iter->processing_header = false;
+                iter->processing_msg = true;
+                count++;
+            }
+            iter->hind = 0;
+            break;
+        }
+        if (irc->buf[i] != '\r' && irc->buf[i] != '\n') { // weed out welcome text
+            iter->header_str[iter->hind] = irc->buf[i];
+            iter->hind++;
+        } else {
+            iter->hind = 0;
+            iter->header_str[0] = '\0';
+        }
+        count++;
+        i++;
+    }
+    iter->header_str[iter->hind] = '\0';
+    return count;
+}
+
+int parse_msg_line(Irc *irc, int i) {
+    Iterator *iter = &irc->iterator;
+    int count = 0;
+
+    while (irc->buf[i] != '\0') {
+        if (irc->buf[i] == '\r') { // \r is the official end of a message
+            iter->processing_msg = false;
+            iter->processing_header = true;
+            iter->message_string[iter->bind] = '\0';
+            parse_message(&irc->message, iter->message_string);
+            iter->bind = 0;
+            break;
+        }
+        iter->message_string[iter->bind] = irc->buf[i];
+        iter->bind++;
+        i++;
+        count++;
+    }
+    iter->message_string[iter->bind] = '\0';
+    return count;
+}
+
+void _init_iterator(Iterator *iterator) {
+    iterator->hind = 0;
+    iterator->proc_ind = 0;
+    iterator->bind = 0;
+    iterator->to_process = NULL;
+    iterator->processing_header = true;
+    iterator->processing_msg = false;
+    iterator->body[0] = '\0';
+    iterator->header_str[0] = '\0';
+    iterator->message_string[0] = '\0';
+    iterator->process_len = 0;
+    iterator->done_initial = false;
 }

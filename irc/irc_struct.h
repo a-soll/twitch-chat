@@ -10,7 +10,7 @@
 
 #define MYPORT "6667"
 #define BACKLOG 10
-#define BUFF_SIZE 1001
+#define BUFF_SIZE 500
 #define COLOR_LEN 11
 #define NONCE_LEN 51
 #define NAME_LEN 26
@@ -28,8 +28,8 @@
 #define MESSAGE_LEN 550
 #define USER_LEN 26
 
-#define HEADER_FRAG_LEN 2500
-#define BODY_LEN 1700
+#define HEADER_FRAG_LEN 1700
+#define BODY_LEN 1500
 
 typedef struct TwitchChat {
     int status;
@@ -78,16 +78,27 @@ typedef struct Header {
     char msg_id[ID_LEN];
 } Header;
 
-typedef struct Irc {
-    bool processing_header;
-    bool processing_msg;
-    char header_str[HEADER_FRAG_LEN];
-    char *to_process;
+typedef struct Iterator {
     size_t process_len;
+    int hind;
+    int bind;
+    char header_str[HEADER_FRAG_LEN];
+    char message_string[MESSAGE_LEN];
+    bool processing_header;
+    char *to_process;
+    bool processing_msg;
     char body[BODY_LEN];
+    int proc_ind;
+    bool done_initial;
+} Iterator;
+
+typedef struct Irc {
     Message message;
     Header header;
     char buf[BUFF_SIZE];
+    size_t size;
+    Iterator iterator;
+    bool finished;
 } Irc;
 
 void chat_init(TwitchChat *chat);
@@ -97,3 +108,6 @@ void init_irc(Irc *irc);
 void parse_irc(TwitchChat *chat, Irc *irc);
 void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel);
 void _init_header(Header *header);
+int parse_header_line(Irc *irc, int i);
+void _init_iterator(Iterator *iterator);
+int parse_msg_line(Irc *irc, int i);
