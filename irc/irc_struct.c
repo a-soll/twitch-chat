@@ -209,7 +209,7 @@ void parse_irc(TwitchChat *chat, Irc *irc) {
 
     while (irc->buf[iter->proc_ind] != '\0') {
         if (iter->processing_header) {
-            iter->proc_ind += parse_header_line(irc, iter->proc_ind);
+            iter->proc_ind += parse_header_line(irc, chat, iter->proc_ind);
         }
         if (iter->processing_msg) {
             iter->proc_ind += parse_msg_line(irc, iter->proc_ind);
@@ -244,7 +244,7 @@ void _init_header(Header *header) {
     header->room_id[0] = '\0';
 }
 
-int parse_header_line(Irc *irc, int i) {
+int parse_header_line(Irc *irc, TwitchChat *chat, int i) {
     Iterator *iter = &irc->iterator;
     if (!iter->header_str[0]) {
         _init_header(&irc->header);
@@ -254,6 +254,7 @@ int parse_header_line(Irc *irc, int i) {
     while (irc->buf[i] != '\0') {
         if (irc->buf[i] == ' ') { // header ends on space
             iter->header_str[iter->hind] = '\0';
+            pong_check(irc, chat, i);
             if (iter->header_str[0] == '@') {
                 parse_header(&irc->header, iter->header_str, iter->hind);
                 iter->processing_header = false;
@@ -311,4 +312,13 @@ void _init_iterator(Iterator *iterator) {
     iterator->message_string[0] = '\0';
     iterator->process_len = 0;
     iterator->done_initial = false;
+}
+
+void pong_check(Irc *irc, TwitchChat *chat, int i) {
+    Iterator *iter = &irc->iterator;
+    if (strcmp(iter->header_str, "PING") == 0 ) {
+        if (irc->buf[i + 1] == ':') {
+            chat_send(chat, "PONG :tmi.twitch.tv\r\n");
+        }
+    }
 }

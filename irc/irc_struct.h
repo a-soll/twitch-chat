@@ -57,6 +57,7 @@ typedef struct Header {
     char color[COLOR_LEN];
     char display_name[NAME_LEN];
     char emotes[EMOTES_LEN];
+    char bits[150];
     bool first_msg;
     char flags[FLAG_LEN];
     char id[ID_LEN];
@@ -107,7 +108,4 @@ void reset_message(Message *message);
 void init_irc(Irc *irc);
 void parse_irc(TwitchChat *chat, Irc *irc);
 void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel);
-void _init_header(Header *header);
-int parse_header_line(Irc *irc, int i);
-void _init_iterator(Iterator *iterator);
-int parse_msg_line(Irc *irc, int i);
+void chat_deinit(TwitchChat *chat);

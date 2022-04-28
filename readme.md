@@ -45,3 +45,4 @@ For example, if I need to add a key called msg-id, I would add `msg-id, &parse_t
 - msg-id is the string to map from Twitch's header string. Because it is a char, I would add a poiner to `parse_token`, and `NULL` for `parse_bool`
 - I would then add the corresponding member `msg_id[ID_LEN]` to `irc_struct.h`
 - the last field is the offset of `msg_id` so that the code can dynamically grab the correct header member to pass to the parse function
+- run `gperf -t -p header_table_generate.gperf > gperf.c` and copy the values in `asso_values[]`, the `defines`, and the values in `wordlist[]` to `parse.c`
