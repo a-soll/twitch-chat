@@ -9,7 +9,7 @@ all: install
 .PHONY: all
 
 install:
-	$(COMPILER) -c $(SOURCES)
+	$(COMPILER) -I /usr/local/include -c $(SOURCES)
 	mkdir $(INCOUT)
 	ar -cvq $(TARGET).a *.o
 	mv $(TARGET).a $(LIBOUT)
