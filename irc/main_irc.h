@@ -1,3 +1,6 @@
+#ifndef IRC_STRUCT_H
+#define IRC_STRUCT_H
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -48,6 +51,7 @@ typedef struct TwitchChat {
 typedef struct Message {
     char user[USER_LEN];
     char message[MESSAGE_LEN];
+    size_t size;
 } Message;
 
 typedef struct Header {
@@ -107,5 +111,6 @@ int chat_send(TwitchChat *chat, const char *msg);
 void reset_message(Message *message);
 void init_irc(Irc *irc);
 void parse_irc(TwitchChat *chat, Irc *irc);
-void join_chat(TwitchChat *chat, const char *user, const char *token, const char *channel);
 void chat_deinit(TwitchChat *chat);
+
+#endif /* IRC_STRUCT_H */

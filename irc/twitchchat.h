@@ -1,1 +1,1 @@
-#include "irc_struct.h"
+#include "main_irc.h"
