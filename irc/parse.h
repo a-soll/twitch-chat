@@ -1,4 +1,4 @@
-#include "irc_struct.h"
+#include "main_irc.h"
 
 typedef struct header_keys {
     char *name;
@@ -15,8 +15,8 @@ int chat_recv(TwitchChat *chat, char buf[BUFF_SIZE]);
 void parse_header(Header *header, char *header_str, int len);
 char *lookahead(char *str, int position, int end);
 unsigned int hash(const char *str, unsigned int len);
-void _init_header(Header *header);
+void init_header(Header *header);
 int parse_header_line(Irc *irc, TwitchChat *chat, int i);
-void _init_iterator(Iterator *iterator);
+void init_iterator(Iterator *iterator);
 int parse_msg_line(Irc *irc, int i);
 void pong_check(Irc *irc, TwitchChat *chat, int i);
