@@ -34,6 +34,7 @@ void chat_deinit(TwitchChat *chat) {
 void reset_message(Message *message) {
     message->message[0] = '\0';
     message->user[0] = '\0';
+    message->size = 0;
 }
 
 char *lookahead(char *str, int position, int end) {
@@ -70,23 +71,23 @@ int parse_user(char field[], char *msg_str, int cur_ind) {
 }
 
 // get message text
-void parse_msg(char *field, char *msg_str, int cur_ind) {
-    field[0] = '\0';
+void parse_msg(Message *message, char *msg_str, int cur_ind) {
+    message->message[0] = '\0';
     bool add_to = false;
     int len = strlen(msg_str);
-    int count = 0;
+
     while (msg_str[cur_ind] != '\0' && cur_ind < len) {
         if (msg_str[cur_ind] == ':' && !add_to) {
             add_to = true;
             cur_ind++;
         }
         if (add_to) {
-            field[count] = msg_str[cur_ind];
-            count++;
+            message->message[message->size] = msg_str[cur_ind];
+            message->size++;
         }
         cur_ind++;
     }
-    field[count] = '\0';
+    message->message[message->size] = '\0';
 }
 
 void parse_message(Message *message, char *msg_str) {
@@ -94,7 +95,7 @@ void parse_message(Message *message, char *msg_str) {
 
     while (msg_str[i] != '\0') {
         i += parse_user(message->user, msg_str, i);
-        parse_msg(message->message, msg_str, i);
+        parse_msg(message, msg_str, i);
         break;
     }
 }
@@ -187,6 +188,7 @@ void init_irc(Irc *irc) {
     irc->finished = false;
     irc->message.message[0] = '\0';
     irc->message.user[0] = '\0';
+    irc->message.size = 0;
     irc->size = 0;
     _init_iterator(&irc->iterator);
     _init_header(&irc->header);
@@ -195,6 +197,7 @@ void init_irc(Irc *irc) {
 void parse_irc(TwitchChat *chat, Irc *irc) {
     if (irc->finished) {
         irc->finished = false;
+        reset_message(&irc->message);
     }
     Iterator *iter = &irc->iterator;
 
