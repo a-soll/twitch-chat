@@ -20,3 +20,4 @@ int parse_header_line(Irc *irc, TwitchChat *chat, int i);
 void init_iterator(Iterator *iterator);
 int parse_msg_line(Irc *irc, int i);
 void pong_check(Irc *irc, TwitchChat *chat, int i);
+int parse_unknown_key(char *header_str, int i);

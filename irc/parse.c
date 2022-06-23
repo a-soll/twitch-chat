@@ -268,16 +268,14 @@ int parse_bool(bool *field, char *header_str, int cur_ind) {
 }
 
 int get_header_key(char *header_str, char *key, int cur_ind) {
-    int count = 0;
     int i = 0;
     while (header_str[cur_ind] != '=') {
         key[i] = header_str[cur_ind];
         i++;
-        count++;
         cur_ind++;
     }
     key[i] = '\0';
-    return count;
+    return i;
 }
 
 void parse_header(Header *header, char *header_str, int len) {
@@ -288,16 +286,29 @@ void parse_header(Header *header, char *header_str, int len) {
         header_keys *hkey;
         i += get_header_key(header_str, key, i);
         hkey = in_word_set(key, strlen(key));
-        if (hkey->parse_token != NULL) {
-            char *field = (char *)((char *)header + hkey->offset);
-            i += hkey->parse_token(field, header_str, i);
-        }
-        if (hkey->parse_bool != NULL) {
-            bool field = *((bool *)(char *)header + hkey->offset);
-            i += hkey->parse_bool(&field, header_str, i);
+        if (hkey != NULL) {
+            if (hkey->parse_token != NULL) {
+                char *field = (char *)((char *)header + hkey->offset);
+                i += hkey->parse_token(field, header_str, i);
+            }
+            if (hkey->parse_bool != NULL) {
+                bool field = *((bool *)(char *)header + hkey->offset);
+                i += hkey->parse_bool(&field, header_str, i);
+            }
+        } else {
+            i += parse_unknown_key(header_str, i);
         }
         i++;
     }
+}
+
+int parse_unknown_key(char *header_str, int i) {
+    int j = 0;
+    while (header_str[i] != ';' && header_str[i] != '\0') {
+        j++;
+        i++;
+    }
+    return j;
 }
 
 void init_header(Header *header) {
