@@ -13,7 +13,7 @@
 
 #define MYPORT "6667"
 #define BACKLOG 10
-#define BUFF_SIZE 500
+#define BUFF_SIZE 2048
 #define COLOR_LEN 11
 #define NONCE_LEN 51
 #define NAME_LEN 26
