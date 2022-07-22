@@ -38,6 +38,10 @@ Example IRC header:
 - `Message` contains the username and message text.
 - on each iteration, your code can work with the information in IRC to display chat messages in whatever way you need.
 
+# Installing
+- Run `make` from the repo root directory and it will install itself to `/usr/local/include` and `/usr/local/lib`. Run `make clean` to remove. 
+- Once installed, include `<twitchchat.h>` where needed and link with `-llibtwitchchat`
+
 # Contributing
 The header hash map is generated using gperf. If there is a new header key that needs to be added, add it to header_table_generator.gperf and run gperf on it. Copy the new contents of the generated wordlist, asso_values, and #define values to parse.c.
 
