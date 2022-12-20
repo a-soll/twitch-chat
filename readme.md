@@ -18,8 +18,10 @@ int main() {
     init_irc(&irc);
     while (1) {
         parse_irc(&chat, &irc);
-        printf("[%s]%s: %s\n", irc.header.color, irc.message.user, irc.message.message);
-        // prints: [#008000]foley83: game spoils itself haha
+        if (irc.finished) {
+            printf("[%s]%s: %s\n", irc.header.color, irc.message.user, irc.message.message);
+            // prints: [#008000]foley83: game spoils itself haha
+        }
     }
 }
 ```
